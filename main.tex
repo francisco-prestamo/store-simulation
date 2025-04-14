@@ -1,0 +1,231 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+\title{Proyecto de Simulación de Eventos Discretos: Tienda Minorista}
+\author{Francisco Préstamo Bernárdez}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\newpage
+
+\section{Introducción}
+
+\subsection{Descripción del proyecto}
+Este proyecto desarrolla una simulación de eventos discretos para modelar y analizar las operaciones de una tienda minorista. El objetivo principal es entender cómo diferentes parámetros afectan el rendimiento operativo y financiero del establecimiento.
+
+\subsection{Objetivos y metas}
+\begin{itemize}
+    \item Analizar el impacto del número de cajeros en el tiempo de finalización y longitud de colas.
+    \item Determinar la combinación óptima de parámetros de inventario para maximizar ganancias.
+    \item Establecer intervalos de confianza para la ocurrencia de colas largas.
+    \item Proporcionar recomendaciones prácticas basadas en los resultados.
+\end{itemize}
+
+\subsection{Sistema a simular}
+Se modelará una tienda minorista con las siguientes características:
+\begin{itemize}
+    \item Estacionamiento con capacidad limitada.
+    \item Inventario variable de productos con diferentes popularidades y precios.
+    \item Sistema de cajas con múltiples cajeros.
+    \item Patrones de llegada de clientes variables según la hora del día.
+    \item Procesos de reabastecimiento automáticos.
+\end{itemize}
+
+\subsection{Variables que describen el problema}
+\begin{itemize}
+    \item \textbf{Variables de entrada (controlables):}
+    \begin{itemize}
+        \item Número de cajeros.
+        \item Espacios de estacionamiento disponibles.
+        \item Nivel mínimo de inventario para reabastecimiento.
+        \item Multiplicador de reabastecimiento.
+    \end{itemize}
+    
+    \item \textbf{Hay otras variables modificables dentro del Stote}
+    
+    \item \textbf{Variables de salida (respuesta):}
+    \begin{itemize}
+        \item Tiempo de finalización de la simulación.
+        \item Ingresos, costos y ganancias.
+        \item Longitud de las colas en el tiempo de agregar mas personas.
+        \item Número de clientes atendidos.
+        \item Ventas por producto.
+    \end{itemize}
+\end{itemize}
+
+\section{Detalles de Implementación}
+La simulación fue implementada con un enfoque de eventos discretos:
+\begin{itemize}
+    \item \textbf{Sistema de eventos:} Cola de prioridad para ordenar y procesar eventos.
+    \item \textbf{Clase Store:} Encapsula el estado de la tienda (inventario, colas, cajeros, estacionamiento, etc).
+    \item \textbf{Eventos modelados:} Llegada de clientes, inicio de compras, solicitud de pago, finalización de pago, salida de clientes, reabastecimiento de productos.
+    \item \textbf{Distribuciones probabilísticas:} 
+    \begin{itemize}
+        \item Cantidad de clientes que llegan: poisson no homogenea (caminando y en auto).
+        \item Tiempos de llegada: exponencial(diferentes lambda dependiendo si es caminado o en auto).
+        \item Tiempos de compra: suma de uniformes de la cantidad de articulos comprados.
+        \item Tiempos de servicio: tiempo minimo de compra + len(articulos comprados) * uniforme.
+        \item Tiempos de salida: normal con aceptación y rechazo para que sea mayor que un mínimo.
+        \item Tiempos de reabastecimiento: uniforme.
+    \end{itemize}
+    \item \textbf{Estrategias de selección de cola:} Cola más corta por número de clientes (aunque existen otras 2 variantes en el código).
+\end{itemize}
+
+\section{Resultados y Experimentos}
+
+\subsection{Análisis del Número Óptimo de Cajeros}
+Se realizaron múltiples simulaciones variando el número de cajeros (1-10):
+\begin{itemize}
+    \item Reducción significativa del tiempo de finalización al aumentar de 1 a 3 cajeros.
+    \item Punto de inflexión entre 3 y 4 cajeros donde la mejora marginal disminuye.
+    \item Con 5 o más cajeros, se evidencia en la gráfica que ya no varia el tiempo medio de cierre. 
+\end{itemize}
+
+El análisis confirma que después de 4 cajeros, el tiempo de espera para cerrar la tienda no disminuye.
+
+\subsection{Análisis de Colas Largas mediante Bootstrap}
+Se definió cola larga como más de 16 clientes esperando en total para un número de 8 cajeros. Usando bootstrap se obtuvo:
+\begin{itemize}
+    \item Media: 9.9764 ocurrencias de cola larga en período de 10 horas.
+    \item Intervalo de confianza (95\%): 5.0 a 16.0 ocurrencias.
+    \item Error estándar: 3.01.
+\end{itemize}
+
+\subsection{Optimización de Parámetros de Inventario}
+Se exploraron combinaciones de niveles mínimos de inventario (10-50) y multiplicadores de reabastecimiento (1-10):
+\begin{itemize}
+    \item \textbf{Parámetros óptimos:}
+    \begin{itemize}
+        \item Nivel mínimo: 21.
+        \item Multiplicador: 3.
+        \item Ganancia máxima: \$24,900.78.
+    \end{itemize}
+\end{itemize}
+
+\section{Modelo Matemático}
+
+\subsection{Descripción del Modelo Probabilístico}
+\begin{itemize}
+    \item \textbf{Proceso de llegada de clientes:}
+    \begin{itemize}
+        \item Proceso de Poisson no homogéneo con tasas variables por minuto.
+        \item Se consideraron dos procesos independientes: llegadas en auto y caminando.
+        \item La tasa de llegada $\lambda(t)$ se obtiene según la hora del día (en minutos).
+    \end{itemize}
+
+    \item \textbf{Selección de productos:}
+    \begin{itemize}
+        \item Distribución multinomial basada en popularidad relativa
+        \item $p_i = \frac{\text{popularidad}_i}{\sum_j \text{popularidad}_j}$
+    \end{itemize}
+
+    \item \textbf{Tiempo de compra:}
+    \begin{itemize}
+        \item $T_{\text{compra}} = \sum_{i=1}^{n} T_{\text{por\_artículo},i}$
+        \item donde $T_{\text{por\_artículo},i} \sim U(0.5, 2)$
+        
+    \end{itemize}
+\end{itemize}
+
+\subsection{Supuestos y Restricciones}
+\begin{itemize}
+    \item Los clientes siempre eligen la cola más corta (aunque se puede cambiar si se desea).
+    \item Las tasas de llegada son independientes del estado de la tienda.
+    \item El reabastecimiento ocurre después de un tiempo de espera.
+    \item No hay pedidos pendientes por falta de inventario.
+\end{itemize}
+
+\subsection{Comparación con Resultados Experimentales}
+
+\subsubsection{Cálculo del Valor Esperado de los Arribos}
+
+Se calcularon los valores esperados de arribos para los clientes que llegan en auto y caminando como procesos de Poisson no homogéneos. Las funciones de tasa de llegada por hora ($\lambda(t)$) fueron definidas como:
+
+\[
+\lambda_{\text{auto}}(h) = 
+\begin{cases}
+0.3 & \text{si } 6 \leq h < 10 \\
+0.4 & \text{si } 10 \leq h < 16 \\
+0.8 & \text{si } 16 \leq h < 20 \\
+0.2 & \text{si } 20 \leq h < 22 \\
+0 & \text{en otro caso}
+\end{cases}
+\]
+
+\[
+\lambda_{\text{caminando}}(h) = 
+\begin{cases}
+0.15 & \text{si } 6 \leq h < 10 \\
+0.2 & \text{si } 10 \leq h < 16 \\
+0.4 & \text{si } 16 \leq h < 20 \\
+0.1 & \text{si } 20 \leq h < 22 \\
+0 & \text{en otro caso}
+\end{cases}
+\]
+
+Dado que el tiempo en la simulación está en minutos, se sumaron las tasas de llegada por minuto para cada hora del día, multiplicando por 60 minutos cada bloque horario. Así, el valor esperado total de arribos en las 16 horas de operación se calculó como:
+
+El número esperado de arribos en un proceso de Poisson no homogéneo está dado por:
+
+\[
+\mathbb{E}[N(T)] = \int_0^T \lambda(t) \, dt
+\]
+
+Luego:
+\[
+\mathbb{E}[\text{arribos totales}] = \sum_{h=6}^{21} 60 \cdot (\lambda_{\text{auto}}(h) + \lambda_{\text{caminando}}(h)) = 648
+\]
+
+Este valor coincide con el promedio de arribos observado empíricamente en múltiples simulaciones, validando la consistencia del modelo probabilístico.
+
+\subsubsection{Redefinición del Tiempo de Compra}
+
+Originalmente, el tiempo total de compra se calculaba como la suma de tiempos individuales por artículo:
+
+\[
+T_{\text{compra}} = \sum_{i=1}^{n} T_i, \quad \text{con } T_i \sim \mathcal{U}(t_{\text{min}}, t_{\text{max}})
+\]
+
+Sin embargo, para mejorar el rendimiento computacional y aprovechar propiedades estadísticas, se reemplazó esta sumatoria por una variable aleatoria normal:
+
+\[
+T_{\text{compra}} \sim \mathcal{N}(\mu, \sigma^2)
+\]
+
+donde:
+\[
+\mu = n \cdot \frac{t_{\text{min}} + t_{\text{max}}}{2}, \quad 
+\sigma^2 = n \cdot \frac{(t_{\text{max}} - t_{\text{min}})^2}{12}
+\]
+
+Este cambio se justifica empíricamente: se realizaron simulaciones con múltiples sumatorias de variables uniformes y se aplicó un \textbf{test de hipótesis de normalidad} (por ejemplo, Shapiro-Wilk), el cual confirmó que la distribución resultante se aproxima significativamente a una distribución normal.
+
+Para evitar valores no realistas (como tiempos negativos o muy bajos), se utiliza el método de \textbf{aceptación y rechazo}, repitiendo la generación hasta que el valor total del tiempo de compra sea mayor que un umbral mínimo $n \cdot t_{\text{min}}$.
+
+Este enfoque mantiene la fidelidad estadística del modelo original (siempre teniendo en cuenta que al realizar aceptacion y rechazo ya la distribucion deja de ser normal pero en términos de la simulacion es factible) y mejora la eficiencia en la simulación del comportamiento de compra.
+
+\section{Conclusiones}
+
+El desarrollo e implementación de la simulación de eventos discretos para una tienda minorista ha permitido obtener una visión detallada y cuantitativa del comportamiento del sistema bajo distintas configuraciones operativas. A partir del análisis de los resultados, se concluye lo siguiente:
+
+\begin{itemize}
+\item \textbf{Número óptimo de cajeros:} Se identificó que un número de 4 cajeros es suficiente para minimizar el tiempo de finalización de la tienda. A partir de ese punto, agregar más cajeros no aporta mejoras significativas en cuanto al tiempo de cierre de la tienda.
+
+\item \textbf{Gestión de colas:} El análisis estadístico mediante bootstrap demostró que, incluso con 8 cajeros, es posible la aparición de colas largas (mas del doble de cajeros).
+
+\item \textbf{Optimización del inventario:} Se encontró que un nivel mínimo de inventario de 21 unidades y un multiplicador de reabastecimiento de 3 permiten maximizar las ganancias. Esta combinación logra un equilibrio entre evitar quiebres de stock y no incurrir en costos excesivos de almacenamiento.
+
+\item \textbf{Validez del modelo:} El comportamiento del sistema simulado concuerda con los resultados esperados a partir de los modelos probabilísticos definidos. En particular, la cantidad esperada de clientes concuerda con las tasas teóricas.
+\end{itemize}
+
+
+\end{document}
